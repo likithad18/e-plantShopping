@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import './ProductList.css'
 import CartItem from './CartItem';
@@ -318,4 +317,4 @@ function ProductList() {
     );
 }
 
-export default ProductList;
+export default ProductList;
