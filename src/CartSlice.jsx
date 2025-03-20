@@ -1,77 +1,52 @@
-import React from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import { addItem, removeItem, updateQuantity } from './CartSlice';
-import './CartItem.css';
 
-const CartItem = ({ onContinueShopping }) => {
-  const cart = useSelector(state => state.cart.items);
-  const dispatch = useDispatch();
+import { createSlice } from '@reduxjs/toolkit';
 
-  // ✅ Calculate the total amount for all products in the cart
-  const calculateTotalAmount = () => {
-    return cart.reduce((total, item) => {
-      return total + calculateTotalCost(item);
-    }, 0).toFixed(2);
-  };
+export const CartSlice = createSlice({
+    name: 'cart',
+    initialState: {
+        items: [], // Initialize items as an empty array
+        numOfItems: 0 // Number of items multiplied by their quantity
+    },
 
-  // ✅ Increment item quantity
-  const handleIncrement = (item) => {
-    dispatch(updateQuantity({ name: item.name, quantity: item.quantity + 1 }));
-  };
+    reducers: {
+        addItem: (state, action) => {
+            const { name, image, cost } = action.payload;
+            const existingItem = state.items.find(item => item.name === name);
 
-  // ✅ Decrement item quantity (remove if quantity becomes 0)
-  const handleDecrement = (item) => {
-    if (item.quantity > 1) {
-      dispatch(updateQuantity({ name: item.name, quantity: item.quantity - 1 }));
-    } else {
-      dispatch(removeItem(item));
-    }
-  };
+            if (existingItem) {
+                // In existing items, quantity is already added as property
+                existingItem.quantity++;
+            } else {
+                state.items.push({ name, image, cost, quantity: 1 });
+            }
 
-  // ✅ Remove item from the cart
-  const handleRemove = (item) => {
-    dispatch(removeItem(item));
-  };
+            state.numOfItems += 1;
+        },
 
-  // ✅ Calculate total cost for an item (quantity * unit price)
-  const calculateTotalCost = (item) => {
-    return (parseFloat(item.cost.substring(1)) * item.quantity).toFixed(2);
-  };
+        removeItem: (state, action) => {
+            const { name, quantity } = action.payload;
+            state.items = state.items.filter(item => item.name !== name);
+            state.numOfItems -= quantity;
 
-  return (
-    <div className="cart-container">
-      <h2>Total Cart Amount: ${calculateTotalAmount()}</h2>
-      <div>
-        {cart.length > 0 ? (
-          cart.map(item => (
-            <div className="cart-item" key={item.name}>
-              <img className="cart-item-image" src={item.image} alt={item.name} />
-              <div className="cart-item-details">
-                <div className="cart-item-name">{item.name}</div>
-                <div className="cart-item-cost">Price: {item.cost}</div>
-                <div className="cart-item-quantity">
-                  <button className="cart-item-button cart-item-button-dec" onClick={() => handleDecrement(item)}>-</button>
-                  <span className="cart-item-quantity-value">{item.quantity}</span>
-                  <button className="cart-item-button cart-item-button-inc" onClick={() => handleIncrement(item)}>+</button>
-                </div>
-                <div className="cart-item-total">Total: ${calculateTotalCost(item)}</div>
-                <button className="cart-item-delete" onClick={() => handleRemove(item)}>Delete</button>
-              </div>
-            </div>
-          ))
-        ) : (
-          <h3 style={{ color: 'gray', textAlign: 'center' }}>Your cart is empty</h3>
-        )}
-      </div>
-      <div className="continue_shopping_btn">
-        <button className="get-started-button" onClick={onContinueShopping}>Continue Shopping</button>
-        <br />
-        <button className="get-started-button1" onClick={() => alert('Checkout functionality to be added later')}>
-          Checkout
-        </button>
-      </div>
-    </div>
-  );
-};
+            // Just to be sure... I hate negative numbers
+            if (state.numOfItems < 0) {
+                state.numOfItems = 0;
+            }
+        },
 
-export default CartItem;
+        updateQuantity: (state, action) => {
+            const { name, quantity } = action.payload;
+            const existingItem = state.items.find(item => item.name === name);
+
+            if (existingItem) {
+                const differenceQuantity = quantity - existingItem.quantity;
+                state.numOfItems += differenceQuantity;
+                existingItem.quantity = quantity;
+            }
+        },
+    },
+});
+
+export const { addItem, removeItem, updateQuantity } = CartSlice.actions;
+
+export default CartSlice.reducer;
